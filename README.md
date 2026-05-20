@@ -81,28 +81,42 @@ These attributes are preserved on every update as well.
 
 ## 30-Day Auto-Delete Workflow (JumpCloud Setup)
 
-To automatically delete users with the `SJH` attribute after 30 days, set this up in JumpCloud:
+This app is designed to work with JumpCloud's native Workflows feature to automatically delete SJH-provisioned users after 30 days.
 
 ### Step 1 — Create a Dynamic User Group
 
 1. In the JumpCloud Admin Portal, go to **User Groups → + New Group**
 2. Name it: `SJH Provisioned - Auto Expire`
-3. Under **Group Members**, select **Dynamic**
-4. Add condition: `Custom Attribute` → `created_by` → `is` → `SJH`
-5. Save the group
+3. Under **Group Members**, switch to **Dynamic**
+4. Add a condition: `Custom Attribute` → `created_by` → `equals` → `SJH`
+5. Save the group — it will automatically populate with any user carrying that attribute
 
-### Step 2 — Set Up a Workflow
-
-If your JumpCloud plan supports Workflows/Automations:
+### Step 2 — Create the Workflow
 
 1. Go to **Automations → Workflows → + New Workflow**
-2. Trigger: **Scheduled** (daily)
-3. Condition: User is member of `SJH Provisioned - Auto Expire` AND `sjh_created_at` is older than 30 days
-4. Action: **Delete User**
+2. Name it: `Auto-Delete SJH Users After 30 Days`
+3. **Trigger:** Set to **Scheduled** → Daily (recommended: 2:00 AM)
+4. **Condition:** Add a filter for users where:
+   - Group membership = `SJH Provisioned - Auto Expire`
+   - AND `sjh_created_at` custom attribute date is **more than 30 days ago**
+5. **Action:** Select **Delete User**
+6. Save and enable the workflow
+
+Once active, any user created through the bot will be automatically cleaned up exactly 30 days after provisioning — zero manual work required.
+
+### Note on Date Filtering
+
+JumpCloud's Workflow date filtering on custom attributes can vary slightly by plan/version. If date math on a custom attribute string isn't supported directly, use the included fallback script:
+
+```bash
+node server/scripts/expire-sjh-users.js
+```
+
+This can be scheduled via cron or GitHub Actions — see the **Alternative Cron Script** section below.
 
 ### Alternative — Cron Script
 
-If Workflows aren't available on your plan, use the included expiry script:
+If you prefer a code-based approach, use the included expiry script:
 
 ```bash
 cd server
@@ -130,9 +144,3 @@ This script will:
 | POST   | `/api/users`       | Create a user          |
 | PUT    | `/api/users/:id`   | Update a user          |
 | DELETE | `/api/users/:id`   | Delete a user          |
-
----
-
-## One Thing I Need From You
-
-> **Confirm your JumpCloud plan** — Workflow/Automation features require a Business or Enterprise tier. If you have access, the dynamic group + workflow approach is the cleanest hands-off solution. If not, the cron script handles it automatically — just let me know and I'll build that out next!
