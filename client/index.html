@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Demo Bot — JumpCloud HRIS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0f;
+      --surface: #12121a;
+      --surface2: #1c1c28;
+      --border: #2a2a3d;
+      --accent: #7b5ea7;
+      --accent2: #c084fc;
+      --accent3: #38bdf8;
+      --green: #34d399;
+      --red: #f87171;
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --mono: 'DM Mono', monospace;
+      --sans: 'Syne', sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Background grid */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(123,94,167,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(123,94,167,0.04) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .app {
+      position: relative;
+      z-index: 1;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 3rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .logo-badge {
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      font-weight: 500;
+      color: white;
+      letter-spacing: 0.05em;
+    }
+
+    .logo-text {
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .logo-sub {
+      font-size: 0.7rem;
+      font-family: var(--mono);
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .header-tag {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--accent2);
+      border: 1px solid var(--accent);
+      padding: 0.3rem 0.75rem;
+      border-radius: 100px;
+      letter-spacing: 0.05em;
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 2rem;
+      background: var(--surface);
+      padding: 0.35rem;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      width: fit-content;
+    }
+
+    .tab {
+      padding: 0.5rem 1.25rem;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-family: var(--sans);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      letter-spacing: 0.01em;
+    }
+
+    .tab.active {
+      background: var(--surface2);
+      color: var(--text);
+      box-shadow: 0 1px 6px rgba(0,0,0,0.4);
+    }
+
+    .tab:hover:not(.active) { color: var(--text); }
+
+    /* Cards */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .card-title {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+
+    .card-title span {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent2);
+      display: inline-block;
+    }
+
+    /* Form grid */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .form-group.full { grid-column: 1 / -1; }
+
+    label {
+      font-size: 0.72rem;
+      font-family: var(--mono);
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    input, select {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.65rem 0.9rem;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      outline: none;
+      transition: border-color 0.15s;
+      width: 100%;
+    }
+
+    input:focus, select:focus { border-color: var(--accent); }
+    input::placeholder { color: var(--muted); opacity: 0.6; }
+
+    .input-locked {
+      background: var(--surface2);
+      cursor: not-allowed;
+      color: var(--accent2);
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 0.65rem 1.5rem;
+      border-radius: 8px;
+      border: none;
+      font-family: var(--sans);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      letter-spacing: 0.01em;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: white;
+    }
+
+    .btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+
+    .btn-ghost:hover { border-color: var(--accent); color: var(--text); }
+
+    .btn-danger {
+      background: transparent;
+      border: 1px solid var(--red);
+      color: var(--red);
+    }
+
+    .btn-danger:hover { background: rgba(248,113,113,0.1); }
+
+    .btn-sm {
+      padding: 0.35rem 0.85rem;
+      font-size: 0.75rem;
+    }
+
+    /* User list */
+    .user-list { display: flex; flex-direction: column; gap: 0.75rem; }
+
+    .user-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      transition: border-color 0.15s;
+      cursor: pointer;
+    }
+
+    .user-row:hover { border-color: var(--accent); }
+    .user-row.selected { border-color: var(--accent2); background: rgba(192,132,252,0.05); }
+
+    .user-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent3));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 700;
+      flex-shrink: 0;
+      color: white;
+    }
+
+    .user-info { flex: 1; min-width: 0; }
+    .user-name { font-size: 0.9rem; font-weight: 600; }
+    .user-email { font-size: 0.75rem; color: var(--muted); font-family: var(--mono); }
+
+    .user-badge {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      background: rgba(123,94,167,0.2);
+      border: 1px solid rgba(192,132,252,0.3);
+      color: var(--accent2);
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+    }
+
+    /* Toast */
+    .toast-container {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      z-index: 999;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .toast {
+      padding: 0.75rem 1.25rem;
+      border-radius: 10px;
+      font-size: 0.82rem;
+      font-family: var(--mono);
+      animation: slideIn 0.2s ease;
+      max-width: 320px;
+      border: 1px solid;
+    }
+
+    .toast.success {
+      background: rgba(52,211,153,0.1);
+      border-color: var(--green);
+      color: var(--green);
+    }
+
+    .toast.error {
+      background: rgba(248,113,113,0.1);
+      border-color: var(--red);
+      color: var(--red);
+    }
+
+    @keyframes slideIn {
+      from { transform: translateX(20px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    /* Loading spinner */
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255,255,255,0.2);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      display: inline-block;
+      vertical-align: middle;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Attribute pill */
+    .attr-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      padding: 0.3rem 0.75rem;
+      background: rgba(56,189,248,0.08);
+      border: 1px solid rgba(56,189,248,0.25);
+      border-radius: 100px;
+      color: var(--accent3);
+      letter-spacing: 0.04em;
+    }
+
+    .section-actions {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 0.82rem;
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 1.5rem 0;
+    }
+
+    .api-url-bar {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--muted);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.5rem 0.85rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .api-url-bar input {
+      border: none;
+      background: transparent;
+      flex: 1;
+      padding: 0;
+      font-size: 0.72rem;
+    }
+
+    .api-label { color: var(--accent3); flex-shrink: 0; }
+
+    @media (max-width: 640px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .form-group.full { grid-column: 1; }
+      header { flex-direction: column; align-items: flex-start; gap: 1rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="app" id="root"></div>
+
+<script type="module">
+import { h, render } from 'https://esm.sh/preact@10.19.2';
+import { useState, useEffect, useCallback } from 'https://esm.sh/preact@10.19.2/hooks';
+import { html } from 'https://esm.sh/htm@3.1.1/preact';
+
+const DEFAULT_API = 'http://localhost:3001';
+
+// ── Toast system ──────────────────────────────────────────────
+function useToasts() {
+  const [toasts, setToasts] = useState([]);
+  const add = (msg, type = 'success') => {
+    const id = Date.now();
+    setToasts(t => [...t, { id, msg, type }]);
+    setTimeout(() => setToasts(t => t.filter(x => x.id !== id)), 4000);
+  };
+  return { toasts, add };
+}
+
+// ── Create User Form ──────────────────────────────────────────
+function CreateUserForm({ apiBase, onSuccess, toast }) {
+  const [form, setForm] = useState({
+    firstname: '', lastname: '', email: '',
+    username: '', department: '', jobTitle: '', phoneNumber: '',
+  });
+  const [loading, setLoading] = useState(false);
+
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const submit = async () => {
+    if (!form.firstname || !form.lastname || !form.email || !form.username) {
+      toast('Please fill in all required fields.', 'error');
+      return;
+    }
+    setLoading(true);
+    try {
+      const r = await fetch(`${apiBase}/api/users`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(JSON.stringify(data.error));
+      toast(`✓ User ${data.firstname} ${data.lastname} created in JumpCloud!`);
+      setForm({ firstname: '', lastname: '', email: '', username: '', department: '', jobTitle: '', phoneNumber: '' });
+      onSuccess?.();
+    } catch (e) {
+      toast(e.message, 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return html`
+    <div class="card">
+      <div class="card-title"><span></span> Create New User</div>
+      <div style="margin-bottom:1rem;">
+        <div class="attr-pill">⬡ Custom attribute <strong>created_by = SJH</strong> will be auto-stamped</div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>First Name *</label>
+          <input value=${form.firstname} onInput=${e => set('firstname', e.target.value)} placeholder="Jane" />
+        </div>
+        <div class="form-group">
+          <label>Last Name *</label>
+          <input value=${form.lastname} onInput=${e => set('lastname', e.target.value)} placeholder="Doe" />
+        </div>
+        <div class="form-group">
+          <label>Email *</label>
+          <input type="email" value=${form.email} onInput=${e => set('email', e.target.value)} placeholder="jane.doe@company.com" />
+        </div>
+        <div class="form-group">
+          <label>Username *</label>
+          <input value=${form.username} onInput=${e => set('username', e.target.value)} placeholder="jdoe" />
+        </div>
+        <div class="form-group">
+          <label>Department</label>
+          <input value=${form.department} onInput=${e => set('department', e.target.value)} placeholder="Engineering" />
+        </div>
+        <div class="form-group">
+          <label>Job Title</label>
+          <input value=${form.jobTitle} onInput=${e => set('jobTitle', e.target.value)} placeholder="Software Engineer" />
+        </div>
+        <div class="form-group full">
+          <label>Phone Number</label>
+          <input value=${form.phoneNumber} onInput=${e => set('phoneNumber', e.target.value)} placeholder="+1 555 000 0000" />
+        </div>
+      </div>
+      <div class="section-actions">
+        <button class="btn btn-primary" onClick=${submit} disabled=${loading}>
+          ${loading ? html`<span class="spinner"></span>` : '＋ Create User'}
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+// ── User List & Edit ──────────────────────────────────────────
+function UserManager({ apiBase, toast }) {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [selected, setSelected] = useState(null);
+  const [editForm, setEditForm] = useState({});
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const r = await fetch(`${apiBase}/api/users`);
+      const data = await r.json();
+      setUsers(data.results || []);
+    } catch (e) {
+      toast('Failed to load users.', 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, [apiBase]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const selectUser = (u) => {
+    setSelected(u.id);
+    setEditForm({
+      firstname: u.firstname || '',
+      lastname: u.lastname || '',
+      email: u.email || '',
+      department: u.department || '',
+      jobTitle: u.jobTitle || '',
+      phoneNumber: u.phoneNumber || '',
+    });
+  };
+
+  const setEdit = (k, v) => setEditForm(f => ({ ...f, [k]: v }));
+
+  const saveUser = async () => {
+    setSaving(true);
+    try {
+      const r = await fetch(`${apiBase}/api/users/${selected}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editForm),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(JSON.stringify(data.error));
+      toast(`✓ User updated successfully.`);
+      setSelected(null);
+      load();
+    } catch (e) {
+      toast(e.message, 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const deleteUser = async () => {
+    if (!confirm('Delete this user from JumpCloud? This cannot be undone.')) return;
+    setDeleting(true);
+    try {
+      const r = await fetch(`${apiBase}/api/users/${selected}`, { method: 'DELETE' });
+      if (!r.ok) throw new Error('Delete failed.');
+      toast('User deleted from JumpCloud.');
+      setSelected(null);
+      load();
+    } catch (e) {
+      toast(e.message, 'error');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const selectedUser = users.find(u => u.id === selected);
+  const initials = u => ((u.firstname?.[0] || '') + (u.lastname?.[0] || '')).toUpperCase();
+  const hasSJH = u => u.attributes?.some(a => a.name === 'created_by' && a.value === 'SJH');
+
+  return html`
+    <div>
+      <div class="card">
+        <div class="card-title" style="justify-content:space-between;">
+          <div><span></span> Users <span style="color:var(--muted);font-size:0.8rem;font-weight:400;">(${users.length})</span></div>
+          <button class="btn btn-ghost btn-sm" onClick=${load}>↻ Refresh</button>
+        </div>
+        ${loading && html`<div class="empty-state">Loading users…</div>`}
+        ${!loading && users.length === 0 && html`<div class="empty-state">No users found. Create one to get started.</div>`}
+        <div class="user-list">
+          ${users.map(u => html`
+            <div class=${'user-row' + (selected === u.id ? ' selected' : '')} onClick=${() => selectUser(u)}>
+              <div class="user-avatar">${initials(u)}</div>
+              <div class="user-info">
+                <div class="user-name">${u.firstname} ${u.lastname}</div>
+                <div class="user-email">${u.email}</div>
+              </div>
+              ${hasSJH(u) && html`<div class="user-badge">SJH</div>`}
+            </div>
+          `)}
+        </div>
+      </div>
+
+      ${selected && selectedUser && html`
+        <div class="card">
+          <div class="card-title"><span></span> Edit — ${selectedUser.firstname} ${selectedUser.lastname}</div>
+          ${hasSJH(selectedUser) && html`
+            <div style="margin-bottom:1rem;">
+              <div class="attr-pill">⬡ created_by = SJH · sjh_created_at = ${selectedUser.attributes?.find(a=>a.name==='sjh_created_at')?.value?.slice(0,10) || 'N/A'}</div>
+            </div>
+          `}
+          <div class="form-grid">
+            <div class="form-group">
+              <label>First Name</label>
+              <input value=${editForm.firstname} onInput=${e => setEdit('firstname', e.target.value)} />
+            </div>
+            <div class="form-group">
+              <label>Last Name</label>
+              <input value=${editForm.lastname} onInput=${e => setEdit('lastname', e.target.value)} />
+            </div>
+            <div class="form-group">
+              <label>Email</label>
+              <input type="email" value=${editForm.email} onInput=${e => setEdit('email', e.target.value)} />
+            </div>
+            <div class="form-group">
+              <label>Username (locked)</label>
+              <input class="input-locked" value=${selectedUser.username} disabled />
+            </div>
+            <div class="form-group">
+              <label>Department</label>
+              <input value=${editForm.department} onInput=${e => setEdit('department', e.target.value)} />
+            </div>
+            <div class="form-group">
+              <label>Job Title</label>
+              <input value=${editForm.jobTitle} onInput=${e => setEdit('jobTitle', e.target.value)} />
+            </div>
+            <div class="form-group full">
+              <label>Phone Number</label>
+              <input value=${editForm.phoneNumber} onInput=${e => setEdit('phoneNumber', e.target.value)} />
+            </div>
+          </div>
+          <div class="section-actions">
+            <button class="btn btn-primary" onClick=${saveUser} disabled=${saving}>
+              ${saving ? html`<span class="spinner"></span>` : '✓ Save Changes'}
+            </button>
+            <button class="btn btn-danger" onClick=${deleteUser} disabled=${deleting}>
+              ${deleting ? html`<span class="spinner"></span>` : '✕ Delete User'}
+            </button>
+            <button class="btn btn-ghost" onClick=${() => setSelected(null)}>Cancel</button>
+          </div>
+        </div>
+      `}
+    </div>
+  `;
+}
+
+// ── App ───────────────────────────────────────────────────────
+function App() {
+  const [tab, setTab] = useState('create');
+  const [apiBase, setApiBase] = useState(DEFAULT_API);
+  const { toasts, add: toast } = useToasts();
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const switchToManage = () => {
+    setRefreshKey(k => k + 1);
+    setTab('manage');
+  };
+
+  return html`
+    <div class="app">
+      <header>
+        <div class="logo">
+          <div class="logo-badge">SJH</div>
+          <div>
+            <div class="logo-text">Demo Bot</div>
+            <div class="logo-sub">JumpCloud HRIS Integration</div>
+          </div>
+        </div>
+        <div class="header-tag">v1.0 · New Cool Demo Bot</div>
+      </header>
+
+      <div class="api-url-bar">
+        <span class="api-label">API_BASE</span>
+        <input value=${apiBase} onInput=${e => setApiBase(e.target.value)} />
+      </div>
+
+      <div class="tabs">
+        <button class=${'tab' + (tab === 'create' ? ' active' : '')} onClick=${() => setTab('create')}>Create User</button>
+        <button class=${'tab' + (tab === 'manage' ? ' active' : '')} onClick=${() => { setRefreshKey(k=>k+1); setTab('manage'); }}>Manage Users</button>
+      </div>
+
+      ${tab === 'create' && html`<${CreateUserForm} apiBase=${apiBase} toast=${toast} onSuccess=${switchToManage} />`}
+      ${tab === 'manage' && html`<${UserManager} key=${refreshKey} apiBase=${apiBase} toast=${toast} />`}
+
+      <div class="toast-container">
+        ${toasts.map(t => html`<div class=${'toast ' + t.type}>${t.msg}</div>`)}
+      </div>
+    </div>
+  `;
+}
+
+render(html`<${App} />`, document.getElementById('root'));
+</script>
+</body>
+</html>
